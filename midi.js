@@ -6,6 +6,14 @@ const masterGain = context.createGain();
 masterGain.connect(context.destination)
 
 const oscillators = [];
+const oscillatorTypes = [
+  "custom",
+  "sawtooth",
+  "sine",
+  "square",
+  "triangle"
+];
+let selectedOscillatorType = "triangle";
 
 const notes = {
   21: 27.5,
@@ -112,7 +120,7 @@ const playNote = (note, velocity) => {
   keyGain.connect(masterGain);
   keyGain.gain.value = velocity / 127;
 
-  osc.type = "square"
+  osc.type = selectedOscillatorType;
   osc.connect(keyGain);
   osc.frequency.value = notes[note];
   osc.start();
@@ -126,11 +134,25 @@ const stopNote = note => {
   console.log(oscillators);
   const oscillator = oscillators.find(e => e.key === note);
   if (!oscillators) return null;
-  console.log(oscillator.osc);
+  console.warn(oscillator.osc);
   oscillator.osc.stop();
   const index = oscillators.findIndex(e => e.key === note);
   oscillators.splice(index, 1);
 }
+
+const adjustOscType = () => {
+  const knobElement = document.getElementById('knob8');
+  const knobDescriptionElement = document.getElementById('knob8value');
+
+  const oscillatorType = oscillatorTypes[knobElement.value / 25];
+
+  oscillators.map(oscillator => {
+    oscillator.osc.type = oscillatorType;
+  });
+
+  knobDescriptionElement.innerText = oscillatorType;
+  selectedOscillatorType = oscillatorType;
+};
 
 const displayPortInfo = port => {
   console.log('inside loop')
@@ -154,7 +176,14 @@ const handleKnob = data => {
   console.log('handling knob')
   knobSlider.value = value;
   knobValue.innerText = knobSlider.value;
-  adjustVolume();
+
+  switch (note) {
+    case 1:
+      adjustVolume();
+      break;
+    case 8:
+      adjustOscType(note);
+  }
 };
 
 const incrementTotalPressed = () => {
