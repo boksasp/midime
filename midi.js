@@ -106,12 +106,14 @@ const adjustVolume = () => {
   masterGain.gain.value = volume / 100;
 };
 
-const playNote = note => {
+const playNote = (note, velocity) => {
   const osc = context.createOscillator();
-
+  const keyGain = context.createGain();
+  keyGain.connect(masterGain);
+  keyGain.gain.value = velocity / 127;
 
   osc.type = "square"
-  osc.connect(masterGain)
+  osc.connect(keyGain);
   osc.frequency.value = notes[note];
   osc.start();
   oscillators.push({
@@ -170,7 +172,7 @@ const handleNoteOn = (data) => {
   const currentKeyInputDisplayText = `Pressing ${note} with a velocity of ${velocity}`;
 
   currentKeyInput.innerText = currentKeyInputDisplayText;
-  playNote(note);
+  playNote(note, velocity);
 };
 
 const handleNoteOff = note => {
