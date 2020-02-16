@@ -15,6 +15,11 @@ const oscillatorTypes = [
 ];
 let selectedOscillatorType = "triangle";
 
+let knobDetails = [];
+let otherDetails = [];
+const detailsLimit = 50;
+const reverbDuration = 0.2;
+
 const notes = {
   21: 27.5,
   22: 29.1,
@@ -107,11 +112,62 @@ const notes = {
 };
 
 const adjustVolume = () => {
+  // set master volume
   const volumeControl = document.getElementById('knob1');
   const volume = volumeControl !== null ? volumeControl.value : 100;
-  console.log(`volume: ${volume}`)
-  console.log(masterGain)
   masterGain.gain.value = volume / 100;
+};
+
+const addDetails = (detailsArray, newContent) => {
+  detailsArray.reverse();
+  if (detailsArray.length > detailsLimit) {
+    detailsArray.shift();
+  }
+  detailsArray.push(newContent);
+  detailsArray.reverse();
+}
+
+const displayMidiMessage = (data, type) => {
+  let command;
+  let note;
+  let velocity;
+
+  if (data) {
+    if (data.length > 0) {
+      command = data[0];
+    }
+    if (data.length > 1) {
+      note = data[1];
+    }
+    if (data.length > 2) {
+      velocity = data[2];
+    }
+  }
+
+  switch (type) {
+    case "knob":
+      addDetails(knobDetails, `Command: ${command}, note: ${note}, velocity: ${velocity}\n`);
+      const knobDetailsElement = document.getElementById("knobDetails");
+      knobDetailsElement.innerText = knobDetails;
+      break;
+    case "other":
+      addDetails(otherDetails, `Command: ${command}, note: ${note}, velocity: ${velocity}\n`);
+      const otherDetailsElement = document.getElementById("otherDetails");
+      otherDetailsElement.innerText = otherDetails;
+      break;
+  }
+}
+
+const createCustomWave = () => {
+  const knob2 = Number.parseFloat(document.getElementById('knob2').value);
+  const knob3 = Number.parseFloat(document.getElementById('knob3').value);
+  const knob4 = Number.parseFloat(document.getElementById('knob4').value);
+  const knob5 = Number.parseFloat(document.getElementById('knob5').value);
+  const knob6 = Number.parseFloat(document.getElementById('knob6').value);
+  const knob7 = Number.parseFloat(document.getElementById('knob7').value);
+  var imag= new Float32Array([knob2, knob3, knob4, knob5, knob6, knob7]);   // sine
+  var real = new Float32Array(imag.length);  // cos
+  return context.createPeriodicWave(real, imag);
 };
 
 const playNote = (note, velocity) => {
@@ -119,23 +175,31 @@ const playNote = (note, velocity) => {
   const keyGain = context.createGain();
   keyGain.connect(masterGain);
   keyGain.gain.value = velocity / 127;
-
-  osc.type = selectedOscillatorType;
+  if (selectedOscillatorType === "custom") {
+    const wave = createCustomWave();
+    osc.setPeriodicWave(wave);
+  }
+  else {
+    osc.type = selectedOscillatorType;
+  }
   osc.connect(keyGain);
   osc.frequency.value = notes[note];
   osc.start();
   oscillators.push({
     key: note,
-    osc
+    osc,
+    keyGain
   });
 };
 
-const stopNote = note => {
-  console.log(oscillators);
+const stopNote = (note, velocity) => {
   const oscillator = oscillators.find(e => e.key === note);
   if (!oscillators) return null;
-  console.warn(oscillator.osc);
-  oscillator.osc.stop();
+  //oscillator.keyGain.gain.value = velocity / 127;
+  oscillator.keyGain.gain.linearRampToValueAtTime(0.001, context.currentTime + reverbDuration);;
+
+  oscillator.osc.stop(context.currentTime + reverbDuration);
+  //oscillator.osc.disconnect();
   const index = oscillators.findIndex(e => e.key === note);
   oscillators.splice(index, 1);
 }
@@ -155,34 +219,49 @@ const adjustOscType = () => {
 };
 
 const displayPortInfo = port => {
-  console.log('inside loop')
   const portInfo = document.createElement('li');
   portInfo.innerText = `Manufacturer: ${port.manufacturer}, Name: ${port.name}, State: ${port.state}`;
   const inputList = document.getElementById('midiInputs');
   inputList.appendChild(portInfo);
 };
 
-const handleKnob = data => {
-  const note = data[1];
-  const velocity = data[2];
-
-  const value = velocity / 127 * 100;
+const adjustCustomRange = (note, velocity, min, max) => {
+  const percent = velocity / 127 * 100;
+  const range = max - min;
+  const value = ((percent / 100) * range) + min;
 
   const sliderSelector = `knob${note}`;
   const valueSelector = `knob${note}value`;
   const knobSlider = document.getElementById(sliderSelector);
   const knobValue = document.getElementById(valueSelector);
 
-  console.log('handling knob')
   knobSlider.value = value;
-  knobValue.innerText = knobSlider.value;
+  knobValue.innerText = `${knobSlider.value} (${Number.parseFloat(percent).toFixed(0)}%)`;
+};
+
+const handleKnob = data => {
+  displayMidiMessage(data, "knob");
+  const note = data[1];
+  const velocity = data[2];
+
 
   switch (note) {
     case 1:
+      adjustCustomRange(note, velocity, 0, 100);
       adjustVolume();
       break;
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+      adjustCustomRange(note, velocity, -1, 1);
+      break;
     case 8:
+      adjustCustomRange(note, velocity, 0, 100);
       adjustOscType(note);
+      break;
   }
 };
 
@@ -193,6 +272,7 @@ const incrementTotalPressed = () => {
 };
 
 const handleNoteOn = (data) => {
+  displayMidiMessage(data, "other");
   incrementTotalPressed();
   const currentKeyInput = document.getElementById('currentKeyInput');
   const note = data[1];
@@ -204,26 +284,24 @@ const handleNoteOn = (data) => {
   playNote(note, velocity);
 };
 
-const handleNoteOff = note => {
+const handleNoteOff = data => {
+  displayMidiMessage(data, "other");
+  const note = data[1];
+  const velocity = data[2];
   const currentKeyInput = document.getElementById('currentKeyInput');
   const currentKeyInputInnerText = currentKeyInput.innerText;
 
   const newText = `${currentKeyInputInnerText} (released)`;
 
   currentKeyInput.innerText = newText;
-  stopNote(note);
+  stopNote(note, velocity);
 };
 
 const handleMidiMessage = midiMessage => {
-  console.log(midiMessage);
   const { data } = midiMessage;
-
-  const currentInputElement = document.getElementById('currentInput');
 
   if (data) {
     const command = data[0];
-    const note = data[1];
-    const velocity = data[2];
 
     switch (command) {
       case 176:
@@ -233,7 +311,7 @@ const handleMidiMessage = midiMessage => {
         handleNoteOn(data);
         break;
       case 128:
-        handleNoteOff(note);
+        handleNoteOff(data);
         break;
       default:
         console.log('default switch case')
@@ -247,28 +325,8 @@ const setupPort = port => {
   port.onmidimessage = handleMidiMessage;
 };
 
-const handleStateChange = e => {
-  console.log(`Name: ${e.port.name}`);
-  console.log(`Manufacturer: ${e.port.manufacturer}`);
-  console.log(`State: ${e.port.state}`);
-
-  console.log(e);
-
-
-};
-
 const onMIDISuccess = midiAccess => {
-  console.log(midiAccess);
-
   var inputs = midiAccess.inputs;
-  var outputs = midiAccess.outputs;
-
-  if (outputs) {
-    outputs.forEach(port => {
-      console.log('MIDI OUTPUTS:')
-      console.log(port);
-    })
-  }
 
   if (inputs) {
     inputs.forEach(port => setupPort(port));

@@ -3,3 +3,27 @@
   align-items: center;
   height: 25px;
 }
+
+#detailsContainer {
+  display: flex;
+  justify-content: space-around;
+}
+
+#knobDetails {
+  height: 400px;
+  width: 500px;
+  background-color: lightblue;
+  color: black;
+}
+
+#otherDetails {
+  height: 400px;
+  width: 500px;
+  background-color: plum;
+  color: black;
+}
+
+.detailsPane {
+  padding: 10px;
+  overflow: scroll;
+}

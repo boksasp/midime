@@ -14,31 +14,31 @@
   <div class="knobsContainer">
     <div class="knob">
       <p>Volume control</p><br>
-      <input id="knob1" type="range" value=100>
+      <input id="knob1" type="range">
       <span id="knob1value"></span>
     </div>
     <div class="knob">
-      <input id="knob2" type="range" value=0>
+      <input id="knob2" type="range" min=-1 max=1 step=0.000001>
       <span id="knob2value"></span>
     </div>
     <div class="knob">
-      <input id="knob3" type="range" value=0>
+      <input id="knob3" type="range" min=-1 max=1 step=0.000001>
       <span id="knob3value"></span>
     </div>
     <div class="knob">
-      <input id="knob4" type="range" value=0>
+      <input id="knob4" type="range" min=-1 max=1 step=0.000001>
       <span id="knob4value"></span>
     </div>
     <div class="knob">
-      <input id="knob5" type="range" value=0>
+      <input id="knob5" type="range" min=-1 max=1 step=0.000001>
       <span id="knob5value"></span>
     </div>
     <div class="knob">
-      <input id="knob6" type="range" value=0>
+      <input id="knob6" type="range" min=-1 max=1 step=0.000001>
       <span id="knob6value"></span>
     </div>
     <div class="knob">
-      <input id="knob7" type="range" value=0>
+      <input id="knob7" type="range" min=-1 max=1 step=0.000001>
       <span id="knob7value"></span>
     </div>
     <div class="knob">
@@ -46,6 +46,11 @@
       <input id="knob8" type="range" value=0 min=0 max=100 step=25>
       <span id="knob8value"></span>
     </div>
+  </div>
+  <div id="detailsContainer">
+    <div id="knobDetails" class="detailsPane">
+    </div>
+    <div id="otherDetails" class="detailsPane"></div>
   </div>
 </body>
 </html>
