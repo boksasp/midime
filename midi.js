@@ -278,7 +278,7 @@ const handleNoteOn = (data) => {
   const note = data[1];
   const velocity = data.length > 2 ? data[2] : null;
 
-  const currentKeyInputDisplayText = `Pressing ${note} with a velocity of ${velocity}`;
+  const currentKeyInputDisplayText = `Pressed ${note} with a velocity of ${velocity}`;
 
   currentKeyInput.innerText = currentKeyInputDisplayText;
   playNote(note, velocity);
@@ -288,12 +288,6 @@ const handleNoteOff = data => {
   displayMidiMessage(data, "other");
   const note = data[1];
   const velocity = data[2];
-  const currentKeyInput = document.getElementById('currentKeyInput');
-  const currentKeyInputInnerText = currentKeyInput.innerText;
-
-  const newText = `${currentKeyInputInnerText} (released)`;
-
-  currentKeyInput.innerText = newText;
   stopNote(note, velocity);
 };
 
