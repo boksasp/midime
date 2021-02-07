@@ -331,5 +331,4 @@ const onMIDIFailure = () => {
   console.log('Failed to access MIDI')
 };
 
-navigator.requestMIDIAccess()
-  .then(onMIDISuccess, onMIDIFailure);
+navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
